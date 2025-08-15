@@ -1,0 +1,854 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Piano</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: clamp(1.5rem, 5vw, 2rem);
+        }
+
+        .controls {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-section {
+            margin-bottom: 15px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .controls-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .toggle-controls {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+
+        .toggle-controls:hover {
+            background: rgba(102, 126, 234, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .toggle-arrow {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-arrow.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-section {
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
+            max-height: 1000px;
+            opacity: 1;
+        }
+
+        .collapsible-section.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-size: 0.9rem;
+        }
+
+        .control-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .control-btn.remove {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .octave-info {
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            padding: 5px 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 20px;
+        }
+
+        .audio-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.03);
+            padding: 15px;
+            border-radius: 15px;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #555;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .slider-value {
+            color: #667eea;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .audio-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+            background: #ddd;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .audio-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+
+        .audio-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .audio-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            border: none;
+        }
+
+        .waveform-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .wave-btn {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            color: #666;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .wave-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+
+        .wave-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .piano-container {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 15px;
+        }
+
+        .piano-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .piano-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+        }
+
+        .piano-container::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 4px;
+        }
+
+        .piano-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.5);
+        }
+
+        .octave-section {
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .octave-label {
+            text-align: center;
+            color: #666;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 10px;
+        }
+
+        .piano-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 5px;
+        }
+
+        .note-button {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .note-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0%;
+            height: 0%;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .note-button.active::before {
+            width: 120%;
+            height: 120%;
+        }
+
+        .note-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .note-button:active {
+            transform: scale(0.95);
+        }
+
+        .note-label {
+            color: white;
+            font-weight: bold;
+            font-size: clamp(0.8rem, 2.5vw, 1rem);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .note-octave {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: clamp(0.6rem, 2vw, 0.75rem);
+            margin-top: 2px;
+            z-index: 1;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .piano-grid {
+                gap: 8px;
+            }
+
+            .control-btn {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .note-button:hover {
+                transform: scale(1.15);
+            }
+            
+            .piano-grid {
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎹 Grid Piano</h1>
+        
+        <div class="controls">
+            <div class="control-section">
+                <div class="controls-header">
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <div class="btn-group">
+                            <button class="control-btn" id="addOctaveBtn">➕ Add Octave</button>
+                            <button class="control-btn remove" id="removeOctaveBtn">➖ Remove Octave</button>
+                        </div>
+                        <div class="octave-info">
+                            <span id="octaveCount">1 Octave</span>
+                        </div>
+                    </div>
+                    <button class="toggle-controls" id="toggleControls">
+                        <span class="toggle-arrow">▼</span>
+                        <span>Sound Controls</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="collapsible-section" id="audioControlsSection">
+                <div class="audio-controls">
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>🎵 Waveform</span>
+                        </div>
+                        <div class="waveform-selector">
+                            <button class="wave-btn active" data-wave="sine">Sine</button>
+                            <button class="wave-btn" data-wave="square">Square</button>
+                            <button class="wave-btn" data-wave="sawtooth">Saw</button>
+                            <button class="wave-btn" data-wave="triangle">Triangle</button>
+                        </div>
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>🎚️ Attack</span>
+                            <span class="slider-value" id="attackValue">10ms</span>
+                        </div>
+                        <input type="range" class="audio-slider" id="attackSlider" min="1" max="500" value="10">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>📊 Sustain</span>
+                            <span class="slider-value" id="sustainValue">0.2</span>
+                        </div>
+                        <input type="range" class="audio-slider" id="sustainSlider" min="0" max="100" value="20">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>⏱️ Release</span>
+                            <span class="slider-value" id="releaseValue">300ms</span>
+                        </div>
+                        <input type="range" class="audio-slider" id="releaseSlider" min="10" max="2000" value="300">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>🎛️ Filter Freq</span>
+                            <span class="slider-value" id="filterValue">2000Hz</span>
+                        </div>
+                        <input type="range" class="audio-slider" id="filterSlider" min="100" max="8000" value="2000">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>🌊 Reverb</span>
+                            <span class="slider-value" id="reverbValue">0%</span>
+                        </div>
+                        <input type="range" class="audio-slider" id="reverbSlider" min="0" max="100" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>🎭 Detune</span>
+                            <span class="slider-value" id="detuneValue">0¢</span>
+                        </div>
+                        <input type="range" class="audio-slider" id="detuneSlider" min="-100" max="100" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>🔊 Volume</span>
+                            <span class="slider-value" id="volumeValue">50%</span>
+                        </div>
+                        <input type="range" class="audio-slider" id="volumeSlider" min="0" max="100" value="50">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="piano-container" id="pianoContainer"></div>
+    </div>
+
+    <script>
+        // Audio context
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Create reverb using convolver
+        const convolver = audioContext.createConvolver();
+        const reverbGain = audioContext.createGain();
+        reverbGain.gain.value = 0;
+        
+        // Create simple reverb impulse
+        const length = audioContext.sampleRate * 2;
+        const impulse = audioContext.createBuffer(2, length, audioContext.sampleRate);
+        for (let channel = 0; channel < 2; channel++) {
+            const channelData = impulse.getChannelData(channel);
+            for (let i = 0; i < length; i++) {
+                channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+            }
+        }
+        convolver.buffer = impulse;
+        convolver.connect(reverbGain);
+        reverbGain.connect(audioContext.destination);
+        
+        // Master gain
+        const masterGain = audioContext.createGain();
+        masterGain.gain.value = 0.5;
+        masterGain.connect(audioContext.destination);
+        masterGain.connect(convolver);
+        
+        // C Major scale notes
+        const scale = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
+        const noteFrequencies = {
+            'C': 261.63,
+            'D': 293.66,
+            'E': 329.63,
+            'F': 349.23,
+            'G': 392.00,
+            'A': 440.00,
+            'B': 493.88
+        };
+        
+        // Colors for each note (vibrant palette)
+        const noteColors = {
+            'C': '#FF6B6B',  // Red
+            'D': '#FF9F40',  // Orange
+            'E': '#FFD93D',  // Yellow
+            'F': '#6BCF7F',  // Green
+            'G': '#4ECDC4',  // Teal
+            'A': '#45B7D1',  // Light Blue
+            'B': '#9B59B6',  // Purple
+        };
+        
+        // Audio parameters
+        let audioParams = {
+            waveform: 'sine',
+            attack: 0.01,
+            sustain: 0.2,
+            release: 0.3,
+            filterFreq: 2000,
+            reverb: 0,
+            detune: 0,
+            volume: 0.5
+        };
+        
+        let octaves = [4]; // Start with octave 4
+        const activeNotes = new Map();
+        const MIN_OCTAVE = 1;
+        const MAX_OCTAVE = 7;
+        
+        // Create all piano grids
+        function createAllPianos() {
+            const container = document.getElementById('pianoContainer');
+            container.innerHTML = '';
+            
+            octaves.forEach(octave => {
+                const section = document.createElement('div');
+                section.className = 'octave-section';
+                
+                const label = document.createElement('div');
+                label.className = 'octave-label';
+                label.textContent = `Octave ${octave}`;
+                section.appendChild(label);
+                
+                const grid = document.createElement('div');
+                grid.className = 'piano-grid';
+                
+                // Create notes for this octave
+                scale.forEach((note, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'note-button';
+                    
+                    // Special case for high C
+                    const isHighC = index === 7;
+                    const displayNote = isHighC ? "C'" : note;
+                    const actualOctave = isHighC ? octave + 1 : octave;
+                    const bgColor = noteColors[isHighC ? 'C' : note];
+                    
+                    button.style.background = `linear-gradient(135deg, ${bgColor}, ${adjustColor(bgColor, -20)})`;
+                    button.innerHTML = `
+                        <span class="note-label">${displayNote}</span>
+                        <span class="note-octave">${actualOctave}</span>
+                    `;
+                    
+                    // Store data
+                    button.dataset.note = note;
+                    button.dataset.octave = octave;
+                    button.dataset.isHighC = isHighC;
+                    
+                    // Mouse events
+                    button.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        playNote(note, octave, isHighC);
+                        button.classList.add('active');
+                    });
+                    
+                    button.addEventListener('mouseup', () => {
+                        stopNote(note, octave, isHighC);
+                        button.classList.remove('active');
+                    });
+                    
+                    button.addEventListener('mouseleave', () => {
+                        stopNote(note, octave, isHighC);
+                        button.classList.remove('active');
+                    });
+                    
+                    // Touch events
+                    button.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        playNote(note, octave, isHighC);
+                        button.classList.add('active');
+                    });
+                    
+                    button.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        stopNote(note, octave, isHighC);
+                        button.classList.remove('active');
+                    });
+                    
+                    grid.appendChild(button);
+                });
+                
+                section.appendChild(grid);
+                container.appendChild(section);
+            });
+            
+            updateOctaveInfo();
+            updateButtonStates();
+        }
+        
+        // Adjust color brightness
+        function adjustColor(color, amount) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+            const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+            const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+            return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+        }
+        
+        // Play a note
+        function playNote(note, octave, isHighC = false) {
+            const noteKey = `${note}-${octave}-${isHighC}`;
+            
+            // Stop existing note if playing
+            if (activeNotes.has(noteKey)) {
+                stopNote(note, octave, isHighC);
+            }
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+            
+            // Calculate frequency based on octave
+            let frequency = noteFrequencies[note];
+            const actualOctave = isHighC ? octave + 1 : octave;
+            const octaveMultiplier = Math.pow(2, actualOctave - 4);
+            frequency *= octaveMultiplier;
+            
+            // Set oscillator parameters
+            oscillator.frequency.value = frequency;
+            oscillator.type = audioParams.waveform;
+            oscillator.detune.value = audioParams.detune;
+            
+            // Set filter
+            filter.type = 'lowpass';
+            filter.frequency.value = audioParams.filterFreq;
+            filter.Q.value = 1;
+            
+            // Create envelope
+            const now = audioContext.currentTime;
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(audioParams.volume, now + audioParams.attack);
+            gainNode.gain.exponentialRampToValueAtTime(audioParams.sustain * audioParams.volume, now + audioParams.attack + 0.1);
+            
+            // Connect nodes
+            oscillator.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(masterGain);
+            
+            oscillator.start();
+            
+            activeNotes.set(noteKey, { oscillator, gainNode, filter });
+        }
+        
+        // Stop a note
+        function stopNote(note, octave, isHighC = false) {
+            const noteKey = `${note}-${octave}-${isHighC}`;
+            const activeNote = activeNotes.get(noteKey);
+            
+            if (activeNote) {
+                const { oscillator, gainNode } = activeNote;
+                
+                const now = audioContext.currentTime;
+                gainNode.gain.cancelScheduledValues(now);
+                gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + audioParams.release);
+                
+                oscillator.stop(now + audioParams.release);
+                activeNotes.delete(noteKey);
+            }
+        }
+        
+        // Add octave
+        function addOctave() {
+            if (octaves.length === 0) {
+                octaves.push(4); // Start with middle octave if empty
+            } else {
+                // Find the next octave to add
+                const minCurrent = Math.min(...octaves);
+                const maxCurrent = Math.max(...octaves);
+                
+                if (maxCurrent < MAX_OCTAVE) {
+                    octaves.push(maxCurrent + 1);
+                    octaves.sort((a, b) => a - b);
+                } else if (minCurrent > MIN_OCTAVE) {
+                    octaves.unshift(minCurrent - 1);
+                    octaves.sort((a, b) => a - b);
+                }
+            }
+            
+            createAllPianos();
+        }
+        
+        // Remove octave
+        function removeOctave() {
+            if (octaves.length > 1) {
+                octaves.pop();
+                createAllPianos();
+            }
+        }
+        
+        // Update octave info display
+        function updateOctaveInfo() {
+            const info = document.getElementById('octaveCount');
+            const count = octaves.length;
+            info.textContent = `${count} Octave${count !== 1 ? 's' : ''}`;
+        }
+        
+        // Update button states
+        function updateButtonStates() {
+            const addBtn = document.getElementById('addOctaveBtn');
+            const removeBtn = document.getElementById('removeOctaveBtn');
+            
+            // Check if we can add more octaves
+            const minCurrent = Math.min(...octaves);
+            const maxCurrent = Math.max(...octaves);
+            addBtn.disabled = octaves.length > 0 && minCurrent <= MIN_OCTAVE && maxCurrent >= MAX_OCTAVE;
+            
+            // Check if we can remove octaves
+            removeBtn.disabled = octaves.length <= 1;
+        }
+        
+        // Event listeners for control buttons
+        document.getElementById('addOctaveBtn').addEventListener('click', addOctave);
+        document.getElementById('removeOctaveBtn').addEventListener('click', removeOctave);
+        
+        // Toggle controls button
+        document.getElementById('toggleControls').addEventListener('click', () => {
+            const section = document.getElementById('audioControlsSection');
+            const arrow = document.querySelector('.toggle-arrow');
+            
+            section.classList.toggle('collapsed');
+            arrow.classList.toggle('collapsed');
+        });
+        
+        // Audio control listeners
+        // Waveform selector
+        document.querySelectorAll('.wave-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.wave-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                audioParams.waveform = e.target.dataset.wave;
+            });
+        });
+        
+        // Attack slider
+        document.getElementById('attackSlider').addEventListener('input', (e) => {
+            audioParams.attack = parseFloat(e.target.value) / 1000;
+            document.getElementById('attackValue').textContent = e.target.value + 'ms';
+        });
+        
+        // Sustain slider
+        document.getElementById('sustainSlider').addEventListener('input', (e) => {
+            audioParams.sustain = parseFloat(e.target.value) / 100;
+            document.getElementById('sustainValue').textContent = (parseFloat(e.target.value) / 100).toFixed(2);
+        });
+        
+        // Release slider
+        document.getElementById('releaseSlider').addEventListener('input', (e) => {
+            audioParams.release = parseFloat(e.target.value) / 1000;
+            document.getElementById('releaseValue').textContent = e.target.value + 'ms';
+        });
+        
+        // Filter slider
+        document.getElementById('filterSlider').addEventListener('input', (e) => {
+            audioParams.filterFreq = parseFloat(e.target.value);
+            document.getElementById('filterValue').textContent = e.target.value + 'Hz';
+        });
+        
+        // Reverb slider
+        document.getElementById('reverbSlider').addEventListener('input', (e) => {
+            audioParams.reverb = parseFloat(e.target.value) / 100;
+            reverbGain.gain.value = audioParams.reverb;
+            document.getElementById('reverbValue').textContent = e.target.value + '%';
+        });
+        
+        // Detune slider
+        document.getElementById('detuneSlider').addEventListener('input', (e) => {
+            audioParams.detune = parseFloat(e.target.value);
+            document.getElementById('detuneValue').textContent = e.target.value + '¢';
+        });
+        
+        // Volume slider
+        document.getElementById('volumeSlider').addEventListener('input', (e) => {
+            audioParams.volume = parseFloat(e.target.value) / 100;
+            masterGain.gain.value = audioParams.volume;
+            document.getElementById('volumeValue').textContent = e.target.value + '%';
+        });
+        
+        // Initialize
+        createAllPianos();
+        
+        // Resume audio context on first interaction (for mobile)
+        document.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }, { once: true });
+        
+        document.addEventListener('touchstart', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }, { once: true });
+    </script>
+</body>
+</html>
